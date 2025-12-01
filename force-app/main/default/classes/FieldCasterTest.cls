@@ -103,7 +103,7 @@ private class FieldCasterTest {
             'String should convert to integer');
         System.assertEquals(100, FieldCaster.castValue(100.9, intField),
             'Double should truncate to integer');
-        System.assertEquals(100, FieldCaster.castValue(Decimal.valueOf(100.5), intField),
+        System.assertEquals(100, FieldCaster.castValue(100.5, intField),
             'Decimal should truncate to integer');
     }
 
@@ -121,8 +121,8 @@ private class FieldCasterTest {
             'Integer should convert to decimal');
         System.assertEquals(1000.50, FieldCaster.castValue('1000.50', currencyField),
             'String should convert to decimal');
-        System.assertEquals(Decimal.valueOf(999.99),
-            FieldCaster.castValue(Decimal.valueOf(999.99), currencyField),
+        System.assertEquals(999.99,
+            FieldCaster.castValue(999.99, currencyField),
             'Decimal should pass through');
     }
 

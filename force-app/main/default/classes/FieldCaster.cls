@@ -112,13 +112,13 @@ public class FieldCaster {
                     return rawValue;
                 }
                 if (rawValue instanceof Integer) {
-                    return Long.valueOf((Integer) rawValue);
+                    return (Long) rawValue;
                 }
                 if (rawValue instanceof Decimal) {
                     return ((Decimal) rawValue).longValue();
                 }
                 if (rawValue instanceof Double) {
-                    return Long.valueOf(((Double) rawValue).longValue());
+                    return ((Double) rawValue).longValue();
                 }
                 return Long.valueOf(stringValue);
             }
