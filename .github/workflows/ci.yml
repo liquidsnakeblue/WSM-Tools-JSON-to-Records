@@ -1,0 +1,92 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    name: Validate Apex
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Salesforce CLI
+        run: npm install -g @salesforce/cli
+
+      - name: Verify SFDX Project
+        run: |
+          echo "Verifying sfdx-project.json..."
+          cat sfdx-project.json
+          sf project generate manifest --source-dir force-app --name package
+
+      - name: Install PMD
+        run: |
+          wget https://github.com/pmd/pmd/releases/download/pmd_releases%2F7.0.0/pmd-dist-7.0.0-bin.zip
+          unzip pmd-dist-7.0.0-bin.zip
+
+      - name: Run PMD Static Analysis
+        run: |
+          ./pmd-bin-7.0.0/bin/pmd check \
+            --dir force-app \
+            --rulesets category/apex/bestpractices.xml,category/apex/errorprone.xml,category/apex/security.xml \
+            --format text \
+            --cache .pmd-cache \
+            --no-fail-on-violation || echo "PMD found some issues (non-blocking)"
+
+      - name: Validate Apex Metadata
+        run: |
+          echo "Checking all Apex classes have metadata files..."
+          for cls in force-app/main/default/classes/*.cls; do
+            meta="${cls}-meta.xml"
+            if [ ! -f "$meta" ]; then
+              echo "ERROR: Missing metadata file: $meta"
+              exit 1
+            fi
+          done
+          echo "All Apex classes have corresponding metadata files"
+
+      - name: Check API Version
+        run: |
+          echo "Verifying API version is 62.0 or higher..."
+          for meta in force-app/main/default/classes/*.cls-meta.xml; do
+            version=$(grep -oP '(?<=<apiVersion>)[^<]+' "$meta")
+            if (( $(echo "$version < 62.0" | bc -l) )); then
+              echo "ERROR: $meta has API version $version (must be >= 62.0)"
+              exit 1
+            fi
+          done
+          echo "All classes use API version 62.0+"
+
+  lint-docs:
+    name: Lint Documentation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check README exists
+        run: |
+          if [ ! -f "README.md" ]; then
+            echo "ERROR: README.md not found"
+            exit 1
+          fi
+          echo "README.md found"
+
+      - name: Check LICENSE exists
+        run: |
+          if [ ! -f "LICENSE" ]; then
+            echo "ERROR: LICENSE not found"
+            exit 1
+          fi
+          echo "LICENSE found"
